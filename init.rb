@@ -27,6 +27,7 @@ Redmine::Plugin.register :vote_on_issues do
     permission :view_votes, { vote_on_issues: [:view_votes] }, :require => :loggedin
     permission :show_voters, { vote_on_issues: [ :show_voters ] }, :require => :loggedin   
     permission :reset_votes, { vote_on_issues: [ :reset_votes ] }, :require => :loggedin   
+    permission :download_votes, { vote_on_issues: [ :download_votes ] }, :require => :loggedin   
   end
 
   # permission for menu

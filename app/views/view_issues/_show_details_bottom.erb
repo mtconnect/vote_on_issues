@@ -32,6 +32,12 @@
               </div>
             <% end %>
             
+            <% if authorize_for('vote_on_issues', 'download_votes') %>
+              <div class="vote_on_issues-issue-votes-nowrap">
+                &nbsp;<%= link_to('csv', {:controller => 'vote_on_issues', :action => 'download_votes', :issue_id => @issue }, target: :_blank ) %>
+              </div>              
+            <% end %>
+            
             <script>
               vote_on_issues.showVotesOnIssue(<%= VoteOnIssue.up_vote_count_for_issue(@issue.id) %>, <%= VoteOnIssue.down_vote_count_for_issue(@issue.id) %>);
               vote_on_issues.sImgUp = '<%= image_tag('arrow-u-r-green.png', :plugin => 'vote_on_issues') %>';

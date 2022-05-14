@@ -77,6 +77,19 @@ class VoteOnIssuesController < ApplicationController
     # Auto loads /app/views/vote_on_issues/show_voters.js.erb
   end
 
+  def download_votes
+    fid = CustomField.all.where(name: 'Company').first.id
+    @votes = VoteOnIssue.all.where(issue_id: params[:issue_id]).map do |vote|
+      user = vote.user
+      company = user.custom_value_for(fid).value
+      [user.firstname, user.lastname, user.email_address.address, %{"#{company}"}, vote.vote_value]
+    end.sort_by { |r| r[3].downcase }.map do |r|
+      r.join(',')
+    end.join("\n")
+
+    render content_type: 'text/plain', layout: false
+  end
+
   def reset_votes
     votes = VoteOnIssue.where(issue_id: params[:issue_id])
     begin
