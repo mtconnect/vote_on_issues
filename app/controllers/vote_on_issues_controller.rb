@@ -1,6 +1,5 @@
 class VoteOnIssuesController < ApplicationController
   # respond_to :html, :js
-  unloadable
 
   before_action :find_project_by_issue, :authorize, :only => [ :cast_vote, :show_voters, :reset_votes ]
 
@@ -79,11 +78,16 @@ class VoteOnIssuesController < ApplicationController
 
   def download_votes
     fid = CustomField.all.where(name: 'Company').first.id
+    cid = CustomField.all.where(name: 'Interest Category').first.id
+    pcid = CustomField.all.where(name: 'Primary Contact').first.id
     @votes = VoteOnIssue.all.where(issue_id: params[:issue_id]).map do |vote|
       user = vote.user
-      company = user.custom_value_for(fid).value
-      [user.firstname, user.lastname, user.email_address.address, %{"#{company}"}, vote.vote_value]
-    end.sort_by { |r| r[3].downcase }.map do |r|
+      company = ((_ = user.custom_value_for(fid)) ? _.value : '?')
+      category = ((_ = user.custom_value_for(cid)) ? _.value : '?')
+      primary = ((_ = user.custom_value_for(pcid)) ? _.value : '?')
+      [user.firstname, user.lastname, user.email_address.address, %{"#{company}"}, %{"#{category}"}, primary, vote.vote_value]
+    end.sort_by { |r| r[3].downcase }.insert(0,
+         ['"First Name"', '"Last Name"', 'Email', 'Company', '"Interest Category"', 'Primary', 'Vote']).map do |r|
       r.join(',')
     end.join("\n")
 
