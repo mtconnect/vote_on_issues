@@ -24,28 +24,28 @@ end
 
 # Opt lib/ out of Zeitwerk autoloading — the files don't follow its naming
 # conventions (e.g. hooks.rb defines VoteOnIssuesHooks::Hooks, not Hooks).
-Rails.autoloaders.each { |loader| loader.ignore(File.join(__dir__, 'lib')) }
+if (Rails.configuration.respond_to?(:autoloader) && Rails.configuration.autoloader == :zeitwerk) || Rails.version > '7.0'
+  Rails.autoloaders.each { |loader| loader.ignore(File.join(__dir__, 'lib')) }
+end
 
 # Defer all class-level setup until after Rails has finished autoloading.
 # IssueQuery, Query, Issue, and QueryColumn are guaranteed to exist by then.
-Rails.application.config.to_prepare do
-  require_dependency File.join(__dir__, 'lib', 'voi_query_column')
-  require_dependency File.join(__dir__, 'lib', 'vote_on_issues', 'patches', 'query_patch')
-  require_dependency File.join(__dir__, 'lib', 'vote_on_issues_hooks')
+require_dependency File.join(__dir__, 'lib', 'voi_query_column')
+require_dependency File.join(__dir__, 'lib', 'vote_on_issues', 'patches', 'query_patch')
+require_dependency File.join(__dir__, 'lib', 'vote_on_issues_hooks')
 
-  issue_query = (IssueQuery rescue Query)
-  issue_query.add_available_column(
-    VoiQueryColumn.new(:sum_votes_up,
-      :sortable => '(SELECT abs(sum(vote_value)) FROM vote_on_issues WHERE vote_value > 0 AND issue_id=issues.id)'))
-  issue_query.add_available_column(
-    VoiQueryColumn.new(:sum_votes_dn,
-      :sortable => '(SELECT abs(sum(vote_value)) FROM vote_on_issues WHERE vote_value < 0 AND issue_id=issues.id)'))
-  issue_query.add_available_column(
-    VoiQueryColumn.new(:my_vote,
-      :sortable => lambda { "(SELECT vote_value FROM vote_on_issues WHERE issue_id=issues.id and user_id=#{User.current.id})" }))
+issue_query = (IssueQuery rescue Query)
+issue_query.add_available_column(
+  VoiQueryColumn.new(:sum_votes_up,
+    :sortable => '(SELECT abs(sum(vote_value)) FROM vote_on_issues WHERE vote_value > 0 AND issue_id=issues.id)'))
+issue_query.add_available_column(
+  VoiQueryColumn.new(:sum_votes_dn,
+    :sortable => '(SELECT abs(sum(vote_value)) FROM vote_on_issues WHERE vote_value < 0 AND issue_id=issues.id)'))
+issue_query.add_available_column(
+  VoiQueryColumn.new(:my_vote,
+    :sortable => lambda { "(SELECT vote_value FROM vote_on_issues WHERE issue_id=issues.id and user_id=#{User.current.id})" }))
 
-  Issue.include(VoteOnIssues::Patches::QueryPatch)
-end
+Issue.include(VoteOnIssues::Patches::QueryPatch)
 
 # Safe to define at load time — no autoloaded classes referenced.
 class VoteOnIssuesListener < Redmine::Hook::ViewListener
